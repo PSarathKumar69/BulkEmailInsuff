@@ -1,0 +1,10 @@
+flask
+openpyxl
+google-genai
+python-dotenv
+py7zr
+rarfile
+extract-msg
+requests
+xlrd
+pyxlsb

@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CST Bulk Insuff — ARS Mapping</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .topbar .logo { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+    .topbar .sub  { font-size: 12px; color: #8892a4; }
+
+    /* ── Main layout ── */
+    .main {
+      max-width: 860px;
+      margin: 28px auto;
+      padding: 0 16px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── Email card ── */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+    .card-header {
+      background: #f7f8fa;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-header .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .dot-red    { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green  { background: #28c840; }
+    .card-title { font-size: 13px; color: #6b7280; margin-left: 6px; }
+
+    /* ── Fields ── */
+    .field {
+      display: flex;
+      align-items: flex-start;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 0;
+    }
+    .field:last-child { border-bottom: none; }
+    .field-label {
+      width: 110px;
+      min-width: 110px;
+      padding: 13px 16px;
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 500;
+      border-right: 1px solid #f0f0f0;
+      user-select: none;
+    }
+    .field input[type="text"],
+    .field textarea {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 13px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #111827;
+      background: transparent;
+      resize: none;
+    }
+    .field textarea { min-height: 180px; line-height: 1.55; }
+
+    /* ── Attachment drop zone ── */
+    .attach-zone {
+      padding: 12px 16px 16px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .attach-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .drop-area {
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+    .drop-area:hover, .drop-area.dragover {
+      border-color: #6366f1;
+      background: #f5f5ff;
+    }
+    .drop-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    }
+    .drop-icon { font-size: 22px; margin-bottom: 6px; }
+    .drop-text { font-size: 13px; color: #6b7280; }
+    .drop-text span { color: #6366f1; text-decoration: underline; }
+
+    /* Attachment chips */
+    #attachment-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .att-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 4px 10px 4px 8px;
+      font-size: 12px;
+      color: #374151;
+    }
+    .att-chip .att-icon { font-size: 14px; }
+    .att-chip .att-remove {
+      cursor: pointer;
+      color: #9ca3af;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .att-chip .att-remove:hover { color: #ef4444; }
+
+    /* ── Send button ── */
+    .send-row {
+      display: flex;
+      justify-content: flex-end;
+      padding: 12px 16px;
+      border-top: 1px solid #f0f0f0;
+      gap: 10px;
+    }
+    .btn {
+      padding: 9px 20px;
+      border-radius: 7px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .btn-primary  { background: #6366f1; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #4f51e0; }
+    .btn-ghost    { background: #f3f4f6; color: #374151; }
+    .btn-ghost:hover:not(:disabled) { background: #e5e7eb; }
+
+    /* ── Progress panel ── */
+    #progress-panel {
+      display: none;
+    }
+    .progress-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      padding: 14px 20px 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    #log-list {
+      list-style: none;
+      padding: 10px 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    #log-list li {
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: #374151;
+    }
+    #log-list li .icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    #log-list li.err   { color: #dc2626; }
+    #log-list li.spin  { color: #6366f1; }
+
+    .spinner {
+      display: inline-block;
+      width: 13px; height: 13px;
+      border: 2px solid #c7d2fe;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Stats bar ── */
+    #stats-bar {
+      display: none;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .stat-chip {
+      flex: 1;
+      min-width: 110px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color .15s, background .12s;
+      user-select: none;
+    }
+    .stat-chip:hover { box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+    .stat-chip .stat-n  { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+    .stat-chip .stat-lbl{ font-size: 11px; color: #6b7280; margin-top: 2px; }
+    .stat-chip.green  .stat-n { color: #16a34a; }
+    .stat-chip.amber  .stat-n { color: #d97706; }
+    .stat-chip.red    .stat-n { color: #dc2626; }
+    .stat-chip.blue   .stat-n { color: #2563eb; }
+    .stat-chip.indigo .stat-n { color: #4338ca; }
+    .stat-chip.active.green  { border-color: #16a34a; background: #f0fdf4; }
+    .stat-chip.active.amber  { border-color: #d97706; background: #fffbeb; }
+    .stat-chip.active.red    { border-color: #dc2626; background: #fef2f2; }
+    .stat-chip.active.blue   { border-color: #2563eb; background: #eff6ff; }
+    .stat-chip.active.indigo { border-color: #4338ca; background: #eef2ff; }
+    .stat-chip.active:not(.green):not(.amber):not(.red):not(.blue):not(.indigo) {
+      border-color: #6b7280; background: #f9fafb;
+    }
+    .stat-chip .filter-hint {
+      font-size: 9.5px;
+      color: #c4c9d4;
+      margin-top: 3px;
+      letter-spacing: .02em;
+    }
+
+    /* ── Result cards ── */
+    #results-section { display: none; flex-direction: column; gap: 14px; }
+
+    .result-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      overflow: hidden;
+    }
+    .result-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .result-card-header:hover { background: #fafafa; }
+    .rc-left { display: flex; align-items: center; gap: 10px; }
+    .rc-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+    .badge-auto   { background: #dcfce7; color: #15803d; }
+    .badge-review { background: #fef9c3; color: #a16207; }
+    .badge-info   { background: #e0e7ff; color: #4338ca; }
+    .rc-name  { font-size: 14px; font-weight: 600; }
+    .rc-fk    { font-size: 12px; color: #6b7280; }
+    .rc-count { font-size: 12px; color: #6b7280; }
+    .rc-chevron { font-size: 18px; color: #9ca3af; transition: transform .2s; }
+    .result-card.open .rc-chevron { transform: rotate(180deg); }
+
+    .result-card-body {
+      display: none;
+      border-top: 1px solid #f0f0f0;
+      padding: 10px 16px 14px;
+    }
+    .result-card.open .result-card-body { display: block; }
+
+    .rc-folder {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid #f9fafb;
+      font-size: 13px;
+    }
+    .file-row:last-child { border-bottom: none; }
+    .file-icon { font-size: 15px; flex-shrink: 0; }
+    .file-name { flex: 1; color: #111827; }
+    .file-conf {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .conf-high   { background: #dcfce7; color: #15803d; }
+    .conf-medium { background: #fef9c3; color: #a16207; }
+    .conf-low    { background: #fee2e2; color: #b91c1c; }
+
+    /* ── Unassigned section ── */
+    #unassigned-section {
+      display: none;
+    }
+    .ua-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      padding: 14px 20px 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    #ua-list {
+      list-style: none;
+      padding: 10px 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    #ua-list li {
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: #374151;
+    }
+    .ua-status {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .ua-pending { background: #e0e7ff; color: #4338ca; }
+    .ua-miss    { background: #fee2e2; color: #b91c1c; }
+    .ua-skipped { background: #fef3c7; color: #92400e; }
+
+    /* ── Batch folder banner ── */
+    #batch-banner {
+      display: none;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 10px 14px 10px 18px;
+      font-size: 13px;
+      color: #15803d;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    #batch-banner.deleted {
+      background: #f9fafb;
+      border-color: #e5e7eb;
+      color: #9ca3af;
+    }
+    .btn-delete-output {
+      flex-shrink: 0;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid #fca5a5;
+      background: #fff;
+      color: #dc2626;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .btn-delete-output:hover:not(:disabled) { background: #fef2f2; border-color: #ef4444; }
+    .btn-delete-output:disabled { opacity: .45; cursor: default; }
+
+    /* ── Error banner ── */
+    #error-banner {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 13px;
+      color: #b91c1c;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="logo">AuthBridge</div>
+    <div class="sub">CST Bulk Insuff — ARS Mapping</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── Email replica input ── -->
+  <div class="card" id="email-card">
+    <div class="card-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="card-title">New Email</span>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Subject</div>
+      <input type="text" id="subject" placeholder="Insufficiency documents — Batch #…" />
+    </div>
+
+    <div class="field">
+      <div class="field-label">Body</div>
+      <textarea id="body" placeholder="Paste the full email thread here, including any Google Drive / SharePoint links inline…"></textarea>
+    </div>
+
+    <div class="attach-zone">
+      <div class="attach-label">Attachments</div>
+      <div class="drop-area" id="drop-area">
+        <input type="file" id="file-input" multiple
+               accept=".xlsx,.xls,.xlsb,.csv,.ods,.zip,.rar,.7z,.eml,.msg,.pdf,.png,.jpg,.jpeg,.docx,.tiff,.tif,.heic" />
+        <div class="drop-icon">📎</div>
+        <div class="drop-text">Drop files here or <span>click to browse</span></div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
+          Excel, ZIP, RAR, 7z, .eml/.msg, PDF, images, DOCX…
+        </div>
+      </div>
+      <div id="attachment-list"></div>
+    </div>
+
+    <div class="send-row">
+      <button class="btn btn-ghost" id="clear-btn">Clear</button>
+      <button class="btn btn-primary" id="submit-btn">Process Email →</button>
+    </div>
+  </div>
+
+  <!-- ── Error banner ── -->
+  <div id="error-banner"></div>
+
+  <!-- ── Progress ── -->
+  <div class="card" id="progress-panel">
+    <div class="progress-header">Processing…</div>
+    <ul id="log-list"></ul>
+  </div>
+
+  <!-- ── Stats ── -->
+  <div id="stats-bar">
+    <div class="stat-chip green" id="chip-auto">
+      <div class="stat-n" id="st-auto">0</div>
+      <div class="stat-lbl">Auto Matched</div>
+      <div class="filter-hint">click to filter</div>
+    </div>
+    <div class="stat-chip amber" id="chip-review">
+      <div class="stat-n" id="st-review">0</div>
+      <div class="stat-lbl">Needs Review</div>
+      <div class="filter-hint">click to filter</div>
+    </div>
+    <div class="stat-chip indigo" id="chip-info">
+      <div class="stat-n" id="st-info">0</div>
+      <div class="stat-lbl">Info Only</div>
+      <div class="filter-hint">click to filter</div>
+    </div>
+    <div class="stat-chip red" id="chip-unassigned">
+      <div class="stat-n" id="st-unassigned">0</div>
+      <div class="stat-lbl">Unassigned</div>
+      <div class="filter-hint">click to filter</div>
+    </div>
+    <div class="stat-chip blue" id="chip-pending">
+      <div class="stat-n" id="st-pending">0</div>
+      <div class="stat-lbl">Pending Links</div>
+      <div class="filter-hint">click to filter</div>
+    </div>
+    <div class="stat-chip" id="chip-errors">
+      <div class="stat-n" id="st-errors">0</div>
+      <div class="stat-lbl">Extract Errors</div>
+      <div class="filter-hint">click to filter</div>
+    </div>
+  </div>
+
+  <!-- ── Extraction / Download Errors Panel ── -->
+  <div class="card" id="errors-panel" style="display:none;">
+    <div class="ua-header" style="color:#dc2626;border-bottom:1px solid #fee2e2;">⚠ Extraction / Download Errors</div>
+    <ul id="errors-list" style="list-style:none;padding:10px 20px 14px;display:flex;flex-direction:column;gap:6px;"></ul>
+  </div>
+
+  <!-- ── Batch folder banner ── -->
+  <div id="batch-banner">
+    <span id="batch-banner-text"></span>
+    <button class="btn-delete-output" id="delete-output-btn" title="Delete this output batch from disk">🗑 Delete Output</button>
+  </div>
+
+  <!-- ── Candidate result cards ── -->
+  <div id="results-section"></div>
+
+  <!-- ── Unassigned ── -->
+  <div class="card" id="unassigned-section">
+    <div class="ua-header">⚠️ Unassigned / Pending</div>
+    <ul id="ua-list"></ul>
+  </div>
+
+</div><!-- /.main -->
+
+<script>
+// ── File management ──────────────────────────────────────────────────────────
+let selectedFiles = [];
+
+const fileInput      = document.getElementById('file-input');
+const dropArea       = document.getElementById('drop-area');
+const attachmentList = document.getElementById('attachment-list');
+
+function fileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const map = {
+    pdf: '📄', png: '🖼️', jpg: '🖼️', jpeg: '🖼️', heic: '🖼️', tiff: '🖼️', tif: '🖼️',
+    xlsx: '📊', xls: '📊', xlsb: '📊', csv: '📊', ods: '📊',
+    zip: '🗜️', rar: '🗜️', '7z': '🗜️',
+    eml: '✉️', msg: '✉️',
+    docx: '📝', doc: '📝',
+  };
+  return map[ext] || '📎';
+}
+
+function renderChips() {
+  attachmentList.innerHTML = '';
+  selectedFiles.forEach((f, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'att-chip';
+    chip.innerHTML = `
+      <span class="att-icon">${fileIcon(f.name)}</span>
+      <span>${f.name}</span>
+      <span class="att-remove" data-i="${i}" title="Remove">×</span>
+    `;
+    attachmentList.appendChild(chip);
+  });
+  attachmentList.querySelectorAll('.att-remove').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedFiles.splice(+el.dataset.i, 1);
+      renderChips();
+    });
+  });
+}
+
+function addFiles(fileList) {
+  const existing = new Set(selectedFiles.map(f => f.name + f.size));
+  for (const f of fileList) {
+    if (!existing.has(f.name + f.size)) selectedFiles.push(f);
+  }
+  renderChips();
+}
+
+fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
+
+dropArea.addEventListener('dragover',  e => { e.preventDefault(); dropArea.classList.add('dragover'); });
+dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+dropArea.addEventListener('drop', e => {
+  e.preventDefault();
+  dropArea.classList.remove('dragover');
+  addFiles(e.dataTransfer.files);
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  // Delete the current batch folder from disk (fire-and-forget — UI clears immediately)
+  const dob = document.getElementById('delete-output-btn');
+  const folder = dob && dob._batchFolder;
+  if (folder) {
+    fetch('/delete-output', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ batch_folder: folder }),
+    }).catch(() => {}); // silent — Clear always works even if delete fails
+  }
+
+  document.getElementById('subject').value = '';
+  document.getElementById('body').value    = '';
+  selectedFiles = [];
+  renderChips();
+  hideResults();
+});
+
+// ── Filter state ─────────────────────────────────────────────────────────────
+let activeFilter = null;
+let _hasErrors   = false;
+
+// ── UI helpers ───────────────────────────────────────────────────────────────
+function show(el) { el.style.display = 'flex'; }
+function showBlock(el) { el.style.display = 'block'; }
+function hide(el)  { el.style.display = 'none'; }
+
+function hideResults() {
+  activeFilter = null;
+  _hasErrors   = false;
+  ['auto','review','unassigned','pending','errors'].forEach(k => {
+    const c = document.getElementById('chip-' + k);
+    if (c) c.classList.remove('active');
+  });
+  hide(document.getElementById('progress-panel'));
+  hide(document.getElementById('stats-bar'));
+  hide(document.getElementById('errors-panel'));
+  const _bb = document.getElementById('batch-banner');
+  _bb.classList.remove('deleted');
+  hide(_bb);
+  const _dob = document.getElementById('delete-output-btn');
+  if (_dob) { _dob.disabled = false; _dob.textContent = '🗑 Delete Output'; _dob._batchFolder = null; }
+  hide(document.getElementById('results-section'));
+  hide(document.getElementById('unassigned-section'));
+  hide(document.getElementById('error-banner'));
+  document.getElementById('log-list').innerHTML    = '';
+  document.getElementById('results-section').innerHTML = '';
+  document.getElementById('ua-list').innerHTML     = '';
+  document.getElementById('errors-list').innerHTML = '';
+}
+
+function confClass(c) {
+  if (c >= 95) return 'conf-high';
+  if (c >= 80) return 'conf-medium';
+  return 'conf-low';
+}
+
+function addLog(text, type) {
+  const li  = document.createElement('li');
+  li.className = type || '';
+  if (type === 'spin') {
+    li.innerHTML = `<div class="spinner"></div><span>${text}</span>`;
+  } else if (type === 'err') {
+    li.innerHTML = `<span class="icon">✗</span><span>${text}</span>`;
+  } else {
+    li.innerHTML = `<span class="icon">✓</span><span>${text}</span>`;
+  }
+  const ul = document.getElementById('log-list');
+  ul.appendChild(li);
+  ul.scrollTop = ul.scrollHeight;
+  return li;
+}
+
+// Replace the last spinner log with a done entry
+function resolveLastSpinner(text) {
+  const ul   = document.getElementById('log-list');
+  const spin = ul.querySelector('li.spin:last-child');
+  if (spin) {
+    spin.className = '';
+    spin.innerHTML = `<span class="icon">✓</span><span>${text}</span>`;
+  }
+}
+
+// ── Submit ───────────────────────────────────────────────────────────────────
+document.getElementById('submit-btn').addEventListener('click', () => {
+  const subject = document.getElementById('subject').value.trim();
+  const body    = document.getElementById('body').value.trim();
+
+  if (!subject && !body && selectedFiles.length === 0) {
+    showError('Please fill in at least the subject, body, or attach a file.');
+    return;
+  }
+
+  hideResults();
+  showBlock(document.getElementById('progress-panel'));
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('clear-btn').disabled  = true;
+
+  const spinLi = addLog('Sending to pipeline…', 'spin');
+
+  const fd = new FormData();
+  fd.append('subject', subject);
+  fd.append('body',    body);
+  selectedFiles.forEach(f => fd.append('attachments', f));
+
+  const es = new EventSourcePolyfill('/process', fd);
+
+  es.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+
+    if (data.error) {
+      resolveLastSpinner('');
+      showError(data.error);
+      es.close();
+      document.getElementById('submit-btn').disabled = false;
+      document.getElementById('clear-btn').disabled  = false;
+      return;
+    }
+
+    if (data.step) {
+      resolveLastSpinner(data.step);
+      addLog('', 'spin'); // placeholder for next step
+    }
+
+    if (data.done) {
+      es.close();
+      document.getElementById('submit-btn').disabled = false;
+      document.getElementById('clear-btn').disabled  = false;
+
+      // Remove trailing spinner
+      const ul   = document.getElementById('log-list');
+      const spin = ul.querySelector('li.spin:last-child');
+      if (spin) ul.removeChild(spin);
+
+      renderDone(data);
+    }
+  };
+
+  es.onerror = function() {
+    showError('Connection lost. Check the server and try again.');
+    es.close();
+    document.getElementById('submit-btn').disabled = false;
+    document.getElementById('clear-btn').disabled  = false;
+  };
+});
+
+// ── EventSource via fetch (supports POST) ─────────────────────────────────────
+function EventSourcePolyfill(url, formData) {
+  const self = this;
+  self.onmessage = null;
+  self.onerror   = null;
+  let aborted    = false;
+
+  self.close = () => { aborted = true; };
+
+  fetch(url, { method: 'POST', body: formData })
+    .then(resp => {
+      const reader = resp.body.getReader();
+      const dec    = new TextDecoder();
+      let buf      = '';
+
+      function read() {
+        if (aborted) return;
+        reader.read().then(({ done, value }) => {
+          if (done) return;
+          buf += dec.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop();
+          parts.forEach(part => {
+            const line = part.trim();
+            if (line.startsWith('data:')) {
+              const payload = line.slice(5).trim();
+              if (self.onmessage) self.onmessage({ data: payload });
+            }
+          });
+          read();
+        }).catch(err => {
+          if (!aborted && self.onerror) self.onerror(err);
+        });
+      }
+      read();
+    })
+    .catch(err => {
+      if (self.onerror) self.onerror(err);
+    });
+}
+
+// ── Filter logic ─────────────────────────────────────────────────────────────
+function setFilter(f) {
+  activeFilter = (activeFilter === f) ? null : f;
+  ['auto','review','info','unassigned','pending','errors'].forEach(key => {
+    const chip = document.getElementById('chip-' + key);
+    if (chip) chip.classList.toggle('active', activeFilter === key);
+  });
+  applyFilter();
+}
+
+function applyFilter() {
+  const rs      = document.getElementById('results-section');
+  const us      = document.getElementById('unassigned-section');
+  const ep      = document.getElementById('errors-panel');
+  const cards   = [...rs.querySelectorAll('.result-card')];
+  const uaItems = [...document.getElementById('ua-list').querySelectorAll('li')];
+
+  // Reset all
+  cards.forEach(c   => c.style.display   = '');
+  uaItems.forEach(li => li.style.display = '');
+
+  if (!activeFilter) {
+    if (cards.length)   { rs.style.display = 'flex'; rs.style.flexDirection = 'column'; }
+    else                hide(rs);
+    if (uaItems.length) showBlock(us); else hide(us);
+    if (_hasErrors)     showBlock(ep); else hide(ep);
+    return;
+  }
+
+  if (activeFilter === 'auto' || activeFilter === 'review' || activeFilter === 'info') {
+    cards.forEach(c => { c.style.display = c.dataset.filterKey === activeFilter ? '' : 'none'; });
+    const anyCard = cards.some(c => c.style.display !== 'none');
+    rs.style.display = anyCard ? 'flex' : 'none';
+    if (anyCard) rs.style.flexDirection = 'column';
+    hide(us); hide(ep);
+
+  } else if (activeFilter === 'unassigned' || activeFilter === 'pending') {
+    hide(rs); hide(ep);
+    let any = false;
+    uaItems.forEach(li => {
+      const v = li.dataset.uaType === activeFilter;
+      li.style.display = v ? '' : 'none';
+      if (v) any = true;
+    });
+    if (any) showBlock(us); else hide(us);
+
+  } else if (activeFilter === 'errors') {
+    hide(rs); hide(us);
+    if (_hasErrors) showBlock(ep); else hide(ep);
+  }
+}
+
+// ── Render done state ─────────────────────────────────────────────────────────
+function renderDone(data) {
+  const stats = data.stats || {};
+
+  // Stats bar
+  document.getElementById('st-auto').textContent       = stats.auto_matched        || 0;
+  document.getElementById('st-review').textContent     = stats.review              || 0;
+  document.getElementById('st-info').textContent       = stats.info_only           || 0;
+  document.getElementById('st-unassigned').textContent = stats.unassigned          || 0;
+  document.getElementById('st-pending').textContent    = stats.pending_links       || 0;
+  document.getElementById('st-errors').textContent     = stats.failed_extractions  || 0;
+  show(document.getElementById('stats-bar'));
+
+  // Wire chip filters once (guard with _filterBound)
+  ['auto','review','info','unassigned','pending','errors'].forEach(key => {
+    const chip = document.getElementById('chip-' + key);
+    if (chip && !chip._filterBound) {
+      chip._filterBound = true;
+      chip.addEventListener('click', () => setFilter(key));
+    }
+  });
+
+  // Extraction / download errors panel
+  const errs = data.extraction_errors || [];
+  _hasErrors = errs.length > 0;
+  if (_hasErrors) {
+    const el = document.getElementById('errors-list');
+    errs.forEach(e => {
+      const li = document.createElement('li');
+      li.style.cssText = 'font-size:12.5px;color:#374151;display:flex;align-items:flex-start;gap:8px;line-height:1.45;';
+      li.innerHTML = `<span style="color:#dc2626;flex-shrink:0;margin-top:1px;">✗</span><span><strong>${esc(e.path || '')}</strong>${e.reason ? ' — ' + esc(e.reason) : ''}</span>`;
+      el.appendChild(li);
+    });
+    showBlock(document.getElementById('errors-panel'));
+  }
+
+  // Batch folder banner + delete button
+  if (data.batch_folder) {
+    const bb  = document.getElementById('batch-banner');
+    const btn = document.getElementById('delete-output-btn');
+    bb.classList.remove('deleted');
+    document.getElementById('batch-banner-text').textContent = `✅ Output saved to: output/${data.batch_folder}`;
+    btn.disabled = false;
+    btn._batchFolder = data.batch_folder;
+    if (!btn._deleteBound) {
+      btn._deleteBound = true;
+      btn.addEventListener('click', () => {
+        const folder = btn._batchFolder;
+        if (!folder) return;
+        btn.disabled = true;
+        btn.textContent = 'Deleting…';
+        fetch('/delete-output', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ batch_folder: folder }),
+        })
+          .then(r => r.json())
+          .then(res => {
+            if (res.ok) {
+              bb.classList.add('deleted');
+              document.getElementById('batch-banner-text').textContent = `🗑 Deleted: output/${folder}`;
+              btn.textContent = 'Deleted';
+            } else {
+              btn.disabled = false;
+              btn.textContent = '🗑 Delete Output';
+              alert('Delete failed: ' + (res.error || 'unknown error'));
+            }
+          })
+          .catch(() => {
+            btn.disabled = false;
+            btn.textContent = '🗑 Delete Output';
+            alert('Request failed — is the server running?');
+          });
+      });
+    }
+    show(bb);  // uses display:flex (set in CSS)
+  }
+
+  // Candidate result cards
+  const rs = document.getElementById('results-section');
+  if (data.results && data.results.length > 0) {
+    show(rs);
+    rs.style.flexDirection = 'column';
+    data.results.forEach(r => {
+      const badgeClass = r.status === 'Needs Review' ? 'badge-review'
+                       : r.status === 'Info Only'    ? 'badge-info'
+                       : 'badge-auto';
+      const filterKey = (r.status.startsWith('Needs Review') || r.status === 'No Documents') ? 'review'
+                       : r.status === 'Info Only' ? 'info'
+                       : 'auto';
+      // The actual on-disk folder name (e.g. "2435-342773_Arun_Kumar_S") — falls back
+      // to folder_key alone if output_folder wasn't set for some reason.
+      const leafFolder = (r.output_folder || '').split('/').filter(Boolean).pop() || r.folder_key;
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.dataset.filterKey = filterKey;
+      card.innerHTML = `
+        <div class="result-card-header">
+          <div class="rc-left">
+            <span class="rc-badge ${badgeClass}">${r.status}</span>
+            <div>
+              <div class="rc-name">${esc(r.candidate_name || '—')}</div>
+              <div class="rc-fk">📁 ${esc(leafFolder)}${r.emp_id ? ' · EMP ' + esc(r.emp_id) : ''}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="rc-count">${r.file_count} file(s)</span>
+            <span class="rc-chevron">⌄</span>
+          </div>
+        </div>
+        <div class="result-card-body">
+          <div class="rc-folder">📁 ${esc(r.output_folder || '')}</div>
+          ${(r.files || []).map(f => `
+            <div class="file-row">
+              <span class="file-icon">${fileIcon(f.filename)}</span>
+              <span class="file-name">${esc(f.filename)}</span>
+              ${f.confidence > 0 ? `<span class="file-conf ${confClass(f.confidence)}">${f.confidence}%</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+      card.querySelector('.result-card-header').addEventListener('click', () => {
+        card.classList.toggle('open');
+      });
+      rs.appendChild(card);
+    });
+  }
+
+  // Unassigned / pending
+  const unassigned = data.unassigned || [];
+  if (unassigned.length > 0) {
+    const us = document.getElementById('unassigned-section');
+    showBlock(us);
+    const ul = document.getElementById('ua-list');
+    unassigned.forEach(u => {
+      const li         = document.createElement('li');
+      const isPending  = u.status === 'link_pending_manual_fetch';
+      const isSkipped  = u.status === 'skipped_capacity_limit';
+      const statusLbl  = isPending ? 'Pending' : isSkipped ? 'Skipped (cap)' : u.status;
+      const statusCls  = isPending ? 'ua-pending' : isSkipped ? 'ua-skipped' : 'ua-miss';
+      li.dataset.uaType = isPending ? 'pending' : 'unassigned';
+      // Skipped candidates have no file/link of their own — identify them by ARS/name instead.
+      const label = (u.folder_key || u.candidate_name)
+        ? `${esc(u.folder_key || '')}${u.candidate_name ? ' · ' + esc(u.candidate_name) : ''}`
+        : esc(u.link_url || u.filename || '—');
+      li.innerHTML = `
+        <span class="ua-status ${statusCls}">${statusLbl}</span>
+        <span>${label} — ${esc(u.reason)}</span>
+      `;
+      ul.appendChild(li);
+    });
+  }
+}
+
+function showError(msg) {
+  const eb = document.getElementById('error-banner');
+  eb.textContent = '⚠️ ' + msg;
+  showBlock(eb);
+}
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

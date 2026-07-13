@@ -1,0 +1,26 @@
+# Secrets
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Runtime data — regenerated per run, and can contain real candidate PII
+# (uploads/extracted are wiped on each run; output/ persists but is generated
+# output, not source, and holds real documents/names once used in production)
+mvp/uploads/*
+!mvp/uploads/.gitkeep
+mvp/extracted/*
+!mvp/extracted/.gitkeep
+mvp/output/*
+!mvp/output/.gitkeep
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
